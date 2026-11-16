@@ -1,0 +1,59 @@
+
+name: BRAIN ARENA APK Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract ZIP
+        run: |
+          mkdir -p app
+          unzip -q brain-arena-v1.5.zip -d app
+          find app -maxdepth 3 -type f | head -100
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Prepare Capacitor
+        run: |
+          cd app
+          ROOT=$(find . -name index.html -printf '%h\n' | head -1)
+          if [ -z "$ROOT" ]; then
+            echo "index.html not found"
+            exit 1
+          fi
+          mkdir -p www
+          cp -r "$ROOT"/. www/
+          npm init -y
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init "BRAIN ARENA" "com.zunexstudios.brainarena" --web-dir www
+          npx cap add android
+          npx cap sync android
+
+      - name: Build APK
+        run: |
+          cd app/android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: BRAIN-ARENA-APK
+          path: app/android/app/build/outputs/apk/debug/app-debug.apk
+          
