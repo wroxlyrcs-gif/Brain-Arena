@@ -16,7 +16,8 @@ jobs:
         run: |
           mkdir -p app
           unzip -q brain-arena-v1.5.zip -d app
-          find app -maxdepth 3 -type f | head -100
+          echo "ZIP extracted successfully"
+          find app -name index.html
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -27,20 +28,24 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
 
       - name: Prepare Capacitor
         run: |
           cd app
           ROOT=$(find . -name index.html -printf '%h\n' | head -1)
+
           if [ -z "$ROOT" ]; then
-            echo "index.html not found"
+            echo "ERROR: index.html not found"
             exit 1
           fi
+
           mkdir -p www
           cp -r "$ROOT"/. www/
+
           npm init -y
           npm install @capacitor/core @capacitor/cli @capacitor/android
+
           npx cap init "BRAIN ARENA" "com.zunexstudios.brainarena" --web-dir www
           npx cap add android
           npx cap sync android
@@ -56,4 +61,4 @@ jobs:
         with:
           name: BRAIN-ARENA-APK
           path: app/android/app/build/outputs/apk/debug/app-debug.apk
-          
+          if-no-files-found: error
